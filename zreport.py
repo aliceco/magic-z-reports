@@ -51,12 +51,18 @@ list_Alkfritt = [
 "Pop Art",
 "Drycker",
 "Alkfri drink",
+"Bärbarsläsk",
 ]
 
 # Lista över produkter/kategorier som ska räknas som mat
 list_Mat = [
 "Mat",
 "Billys Pan Pizza",
+"Billys",
+]
+
+list_Kiosk = [
+"Bärbaren",
 ]
 
 def main():
@@ -94,6 +100,7 @@ def main():
         print("Date:", getDate(lines))
         print("Card:", card, "  Cash:",cash)
         print("Refunds:", getNettoTotal(lines)-(card+cash), "  Total:", getNettoTotal(lines))
+        print("Discounts:", -discounts)
         print("")
         if getNettoTotal(lines)-(card+cash) != 0:
             print("ALERT!!! Report has refunds!!! Check report for more details")
@@ -104,7 +111,7 @@ def main():
 
         unhandledProducts = False
         for k,v in categorys.items():
-            if k not in list_Ol and k not in list_Cider and k != "Sprit" and k not in list_Mat and k not in list_Vin and k not in list_Alkfritt:
+            if k not in list_Ol and k not in list_Cider and k != "Sprit" and k not in list_Mat and k not in list_Vin and k not in list_Alkfritt and k not in list_Kiosk:
                 print('{0:8.2f} kr - {1}'.format(v, k))
                 unhandledProducts = True
         if unhandledProducts:
@@ -117,6 +124,7 @@ def main():
         sold_Vin = 0.0
         sold_Alkfritt = 0.0
         sold_Mat = 0.0
+        sold_Kiosk = 0.0
         for k,v in categorys.items():
             if k in list_Ol:
                 sold_Ol += v
@@ -130,14 +138,17 @@ def main():
                 sold_Alkfritt += v
             if k in list_Mat:
                 sold_Mat += v
+            if k in list_Kiosk:
+                sold_Kiosk += v
 
         print("Försäljning (kredit)")
         print('{0:8.2f} kr - {1}'.format(sold_Alkfritt, "Försäljning läsk"))
         print('{0:8.2f} kr - {1}'.format(sold_Ol, "Försäljning öl"))
         print('{0:8.2f} kr - {1}'.format(sold_Cider, "Försäljning cider"))
-        print('{0:8.2f} kr - {1}'.format(sold_Vin, "Försäljning vin"))
         print('{0:8.2f} kr - {1}'.format(sold_Sprit, "Försäljning sprit"))
+        print('{0:8.2f} kr - {1}'.format(sold_Vin, "Försäljning vin"))
         print('{0:8.2f} kr - {1}'.format(sold_Mat, "Försäljning mat"))
+        print('{0:8.2f} kr - {1}'.format(sold_Kiosk, "Försäljning kiosk"))
         print("\nInköp och Lager (Inköp på debet & Lager på kredit)")
         print('{0:8.2f} kr - {1}'.format(sold_Ol*0.71, "Inköp öl & Öllager"))
         print('{0:8.2f} kr - {1}'.format(sold_Cider*0.76, "Inköp cider & Ciderlager"))
@@ -158,7 +169,7 @@ def getProductSales(lines):
     # \s+[\d,]+\d\d\s+ before group 3 filters out the VAT.
 
     
-    productregex = re.compile("\s*([A-ö+\s\d]*),?.+?\s{3}\d+\s\s+([\d\s]+,\d\d)\s+[\d,]+\d\d\s+([\d\s]+,\d\d)")
+    productregex = re.compile("\s*([A-öøØ+\s\d]*),?.+?\s{3}\d+\s\s+([\d\s]+,\d\d)\s+[\d,]+\d\d\s+([\d\s]+,\d\d)")
     categorys = {}
 
     sumSold  = 0
