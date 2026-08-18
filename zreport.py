@@ -4,87 +4,111 @@ import sys, re, locale
 
 # Lista över produkter/kategorier som ska räknas som öl
 list_Ol = [
-"Öl",
-"pÖl",
+    "Öl",
+    "pÖl",
 ]
 
 # Lista över produkter/kategorier som ska räknas som cider
 list_Cider = [
-"PCider 2019",
-"Cider",
-"Cidraie original",
-"pCider",
-"Vikbo Cider Rabarber",
-"Crush",
-"Somersby Pear",
-"Sommersby Secco",
-"Vikbo Cider Rabarber",
-"Xide Kiwi Cucumber",
-"Bulmers Zesty Blood orange",
+    "PCider 2019",
+    "Cider",
+    "Breezer Lime",
+    "Cidraie original",
+    "pCider",
+    "Vikbo Cider Rabarber",
+    "Crush",
+    "Somersby Pear",
+    "Sommersby Secco",
+    "Vikbo Cider Rabarber",
+    "Xide Kiwi Cucumber",
+    "Bulmers Zesty Blood orange",
+    "Somersby, Päron",
+    "Somersby",
+    "Breezer",
+    "Ginger Joe",
+    "Smirnoff",
 ]
 
 # Lista över produkter/kategorier som ska räknas som sprit
-list_Sprit = [
-"Sprit",
-]
+list_Sprit = ["Sprit", "Drink"]
 
 # Lista över produkter/kategorier som ska räknas som vin
 list_Vin = [
-"Vin",
-"Bubbel",
-"Aniara",
-"Freixenet Cava (glas)",
-"Freixenet Cava (hel flaska)",
-"Jacob’s Creek Chardonnay",
-"Prosecco FLASKA",
-"Les Oliviers Rosé (ett glas)",
-"Les Oliviers Rosé (hel flaska)",
-"Sun Gate Chardonnay (glas)",
-"Sun Gate Chardonnay (hel flaska)",
-"Jacob’s Creek Chardonnay Bubbel",
+    "Vin",
+    "Bubbel",
+    "Aniara",
+    "Freixenet Cava (glas)",
+    "Freixenet Cava (hel flaska)",
+    "Jacob’s Creek Chardonnay",
+    "Prosecco FLASKA",
+    "Les Oliviers Rosé (ett glas)",
+    "Les Oliviers Rosé (hel flaska)",
+    "Sun Gate Chardonnay (glas)",
+    "Sun Gate Chardonnay (hel flaska)",
+    "Jacob’s Creek Chardonnay Bubbel",
 ]
 
 # Lista över produkter/kategorier som ska räknas som alkoholfritt
 list_Alkfritt = [
-"Alkfritt",
-"Läsk",
-"Pop Art",
-"Drycker",
-"Alkfri drink",
-"Bärbarsläsk",
+    "Alkfritt",
+    "Läsk",
+    "Pop Art",
+    "Drycker",
+    "Alkfri drink",
+    "Bärbarsläsk",
+    "Somersby, Alkfri",
+    "Öl, Alkfri Carlsberg",
+    "Drink, Alkfri",
 ]
 
 # Lista över produkter/kategorier som ska räknas som mat
 list_Mat = [
-"Mat",
-"Billys Pan Pizza",
-"Billys",
+    "Mat",
+    "Billys Pan Pizza",
+    "Billys",
 ]
 
 list_Kiosk = [
-"Bärbaren",
+    "Bärbaren",
 ]
 
+# Produkter där hela texten (inklusive delen efter kommatecknet) ska
+# användas som kategori, istället för att bara delen före kommatecknet
+# räknas. Behövs för produkter som delar prefix med andra produkter men
+# INTE ska räknas till samma kategori, t.ex. "Somersby, Päron" (cider)
+# som annars skulle bli samma kategori ("Somersby") som t.ex.
+# "Somersby, Alkfri" (alkoholfritt).
+list_FullNameCategories = [
+    "Somersby, Päron",
+    "Somersby, Alkfri",
+    "Öl, Alkfri Carlsberg",
+    "Drink, Alkfri",
+]
+
+
 def main():
-    locale.setlocale(locale.LC_ALL, 'sv_SE.UTF-8')
+    locale.setlocale(locale.LC_ALL, "sv_SE.UTF-8")
     inp = ""
-    for i in range(1,len(sys.argv)):
-        p = Popen(['pdftotext', '-layout', '-nopgbrk', sys.argv[i], '-'], stdout=PIPE)
+    for i in range(1, len(sys.argv)):
+        p = Popen(["pdftotext", "-layout", "-nopgbrk", sys.argv[i], "-"], stdout=PIPE)
         out, _ = p.communicate(None)
-        out = out.decode(encoding = 'UTF-8')
-        if not 'date' in locals():
-            date = getDate(out.split('\n'))
-        if date and date == getDate(out.split('\n')):
+        out = out.decode(encoding="UTF-8")
+        if not "date" in locals():
+            date = getDate(out.split("\n"))
+        if date and date == getDate(out.split("\n")):
             inp += out
         else:
             if date:
-                print("DATE ERROR: The reports don't have the same date! Error on file",'"{0}"'.format(sys.argv[i]))
+                print(
+                    "DATE ERROR: The reports don't have the same date! Error on file",
+                    '"{0}"'.format(sys.argv[i]),
+                )
                 return
-    
+
     # Debug-print
     print(inp)
 
-    lines = inp.split('\n')
+    lines = inp.split("\n")
     card, cash = getPayments(lines)
     discounts = getDiscounts(lines)
     categorys = getProductSales(lines)
@@ -95,14 +119,19 @@ def main():
     print(discounts)
     print(categorys)
 
-    if sum(categorys.values())+ discounts == (card+cash):
+    if sum(categorys.values()) + discounts == (card + cash):
         print("\n-------------------------------------------")
         print("Date:", getDate(lines))
-        print("Card:", card, "  Cash:",cash)
-        print("Refunds:", getNettoTotal(lines)-(card+cash), "  Total:", getNettoTotal(lines))
+        print("Card:", card, "  Cash:", cash)
+        print(
+            "Refunds:",
+            getNettoTotal(lines) - (card + cash),
+            "  Total:",
+            getNettoTotal(lines),
+        )
         print("Discounts:", -discounts)
         print("")
-        if getNettoTotal(lines)-(card+cash) != 0:
+        if getNettoTotal(lines) - (card + cash) != 0:
             print("ALERT!!! Report has refunds!!! Check report for more details")
         if discounts != 0:
             print("ALERT!!! Report has disounts, make sure you handle them correctly")
@@ -110,13 +139,23 @@ def main():
         print("--------------------------")
 
         unhandledProducts = False
-        for k,v in categorys.items():
-            if k not in list_Ol and k not in list_Cider and k != "Sprit" and k not in list_Mat and k not in list_Vin and k not in list_Alkfritt and k not in list_Kiosk:
-                print('{0:8.2f} kr - {1}'.format(v, k))
+        for k, v in categorys.items():
+            if (
+                k not in list_Ol
+                and k not in list_Cider
+                and k not in list_Sprit
+                and k not in list_Mat
+                and k not in list_Vin
+                and k not in list_Alkfritt
+                and k not in list_Kiosk
+            ):
+                print("{0:8.2f} kr - {1}".format(v, k))
                 unhandledProducts = True
         if unhandledProducts:
             print("--------------------------")
-            print("OBS! OVANSTÅENDE RADER SAKNAR KATEGORI OCH MÅSTE DÄRFÖR HANTERAS MANUELLT!\n")
+            print(
+                "OBS! OVANSTÅENDE RADER SAKNAR KATEGORI OCH MÅSTE DÄRFÖR HANTERAS MANUELLT!\n"
+            )
 
         sold_Ol = 0.0
         sold_Cider = 0.0
@@ -125,7 +164,7 @@ def main():
         sold_Alkfritt = 0.0
         sold_Mat = 0.0
         sold_Kiosk = 0.0
-        for k,v in categorys.items():
+        for k, v in categorys.items():
             if k in list_Ol:
                 sold_Ol += v
             if k in list_Cider:
@@ -142,52 +181,65 @@ def main():
                 sold_Kiosk += v
 
         print("Försäljning (kredit)")
-        print('{0:8.2f} kr - {1}'.format(sold_Alkfritt, "Försäljning läsk"))
-        print('{0:8.2f} kr - {1}'.format(sold_Ol, "Försäljning öl"))
-        print('{0:8.2f} kr - {1}'.format(sold_Cider, "Försäljning cider"))
-        print('{0:8.2f} kr - {1}'.format(sold_Sprit, "Försäljning sprit"))
-        print('{0:8.2f} kr - {1}'.format(sold_Vin, "Försäljning vin"))
-        print('{0:8.2f} kr - {1}'.format(sold_Mat, "Försäljning mat"))
-        print('{0:8.2f} kr - {1}'.format(sold_Kiosk, "Försäljning kiosk"))
+        print("{0:8.2f} kr - {1}".format(sold_Alkfritt, "Försäljning läsk"))
+        print("{0:8.2f} kr - {1}".format(sold_Ol, "Försäljning öl"))
+        print("{0:8.2f} kr - {1}".format(sold_Cider, "Försäljning cider"))
+        print("{0:8.2f} kr - {1}".format(sold_Sprit, "Försäljning sprit"))
+        print("{0:8.2f} kr - {1}".format(sold_Vin, "Försäljning vin"))
+        print("{0:8.2f} kr - {1}".format(sold_Mat, "Försäljning mat"))
+        print("{0:8.2f} kr - {1}".format(sold_Kiosk, "Försäljning kiosk"))
         print("\nInköp och Lager (Inköp på debet & Lager på kredit)")
-        print('{0:8.2f} kr - {1}'.format(sold_Ol*0.71, "Inköp öl & Öllager"))
-        print('{0:8.2f} kr - {1}'.format(sold_Cider*0.76, "Inköp cider & Ciderlager"))
-        print('{0:8.2f} kr - {1}'.format(sold_Sprit*0.43, "Inköp sprit & Spritlager"))
-        print('{0:8.2f} kr - {1}'.format(sold_Vin*0.85, "Inköp vin & Vinlager"))
+        print("{0:8.2f} kr - {1}".format(sold_Ol * 0.71, "Inköp öl & Öllager"))
+        print("{0:8.2f} kr - {1}".format(sold_Cider * 0.76, "Inköp cider & Ciderlager"))
+        print("{0:8.2f} kr - {1}".format(sold_Sprit * 0.43, "Inköp sprit & Spritlager"))
+        print("{0:8.2f} kr - {1}".format(sold_Vin * 0.85, "Inköp vin & Vinlager"))
     else:
-        print("PARSING ERROR: There seems to be some problem with the parsing of the file")
+        print(
+            "PARSING ERROR: There seems to be some problem with the parsing of the file"
+        )
+
 
 def getProductSales(lines):
     """This function takes a list of lines and returns a map with the sales for each category.
     The categories are not predefined but are instead created dynamically.
-    If a product does not have a category-prefix ("Öl," "Cider," etc) a new category is created using the product's name."""
+    If a product does not have a category-prefix ("Öl," "Cider," etc) a new category is created using the product's name.
+    """
 
-    # This regex is using 3 match groups. Group 1 retrieves the category, group 2 retrieves the sum without VAT, group 3 retrieves the sum with VAT.
+    # This regex is using 4 match groups. Group 1 retrieves the full product
+    # text (category + product), group 2 retrieves just the category, group 3
+    # retrieves the sum without VAT, group 4 retrieves the sum with VAT.
     # \s* before group 1 is to remove any leading whitespace.
-    # Group 1 matches everything up until a ',' or 3 consecutive spaces.
-    # \d+\s+ before group 2 filters out the number of items sold.
-    # \s+[\d,]+\d\d\s+ before group 3 filters out the VAT.
+    # Group 2 matches everything up until a ',' or 3 consecutive spaces.
+    # \d+\s+ before group 3 filters out the number of items sold.
+    # \s+[\d,]+\d\d\s+ before group 4 filters out the VAT.
 
-    
-    productregex = re.compile("\s*([A-öøØ+\s\d]*),?.+?\s{3}\d+\s\s+([\d\s]+,\d\d)\s+[\d,]+\d\d\s+([\d\s]+,\d\d)")
+    productregex = re.compile(
+        "\s*(([A-öøØ+\s\d]*),?.+?)\s{3}\d+\s\s+([\d\s]+,\d\d)\s+[\d,]+\d\d\s+([\d\s]+,\d\d)"
+    )
     categorys = {}
 
-    sumSold  = 0
+    sumSold = 0
     for l in lines:
         match = productregex.match(l)
-        if match and match.group(2) == match.group(3):
-            sumSold += locale.atof(match.group(2).replace(' ',''))
-            category = match.group(1).strip()
-            if category in categorys.keys():
-                categorys[category] += locale.atof(match.group(2).replace(' ',''))
-                # Debug print
-                #print(match.group(1), match.group(2),match.group(3))
+        if match and match.group(3) == match.group(4):
+            amount = locale.atof(match.group(3).replace(" ", ""))
+            sumSold += amount
+            fullName = match.group(1).strip()
+            if fullName in list_FullNameCategories:
+                category = fullName
             else:
-                categorys[category] = locale.atof(match.group(2).replace(' ',''))
-    
+                category = match.group(2).strip()
+            if category in categorys.keys():
+                categorys[category] += amount
+                # Debug print
+                # print(match.group(1), match.group(3), match.group(4))
+            else:
+                categorys[category] = amount
+
     # Debug print
-    #print(categorys)
+    # print(categorys)
     return categorys
+
 
 def getPayments(lines):
     """This function takes a list of lines and returns a tuple with the total card and cash payments."""
@@ -199,10 +251,11 @@ def getPayments(lines):
         card_match = card_paymentsregex.match(l)
         cash_match = cash_paymentsregex.match(l)
         if card_match:
-            card += locale.atof(card_match.group(1).replace(' ',''))
+            card += locale.atof(card_match.group(1).replace(" ", ""))
         elif cash_match:
-            cash += locale.atof(cash_match.group(1).replace(' ',''))
+            cash += locale.atof(cash_match.group(1).replace(" ", ""))
     return (card, cash)
+
 
 def getDiscounts(lines):
     """This function takes a list of lines and returns the total sum of discounts"""
@@ -211,7 +264,8 @@ def getDiscounts(lines):
         match = dateregex.match(l)
         if match:
             return locale.atof(match.group(1))
-    return 0;
+    return 0
+
 
 def getDate(lines):
     """This function takes a list of lines and returns the date"""
@@ -221,14 +275,18 @@ def getDate(lines):
         if match:
             return match.group(1)
 
+
 def getNettoTotal(lines):
     """This function takes a list of lines and returns the net sum of sales"""
-    nettoregex = re.compile("\s*Totalt Netto\s+([\d\s]+,\d\d)\s+[\d,]+\d\d\s+[\d\s]+,\d\d\s*")
+    nettoregex = re.compile(
+        "\s*Totalt Netto\s+([\d\s]+,\d\d)\s+[\d,]+\d\d\s+[\d\s]+,\d\d\s*"
+    )
     total = 0
     for l in lines:
         match = nettoregex.match(l)
         if match:
-            total += locale.atof(match.group(1).replace(' ',''))  
+            total += locale.atof(match.group(1).replace(" ", ""))
     return total
+
 
 main()
